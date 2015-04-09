@@ -1,0 +1,30 @@
+{
+  "name": "is-WebSocketClient",
+  "version": "0.1",
+  "description": "Infinity Systems component WebSocketClient",
+  "main": "src/WebSocketClient.js",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "InfinitySystems",
+    "is",
+    "WebSocketClient"
+  ],
+  "authors": [
+    "Rendol"
+  ],
+  "license": "MIT",
+  "homepage": "http://infinity-systems.ru/",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "InfinitySystems": "*",
+    "jquery": "~2.1.3"
+  }
+}
