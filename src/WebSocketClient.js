@@ -5,12 +5,8 @@
  */
 IS.reg('components.WebSocketClient', function () {
 	return $.extend({}, {
-
-		// Options
-		host: 'localhost',
-		port: 8001,
-		registerId: null,
-		sessionId: null,
+		// WebSocket Client options
+		options: {},
 
 		// Private properties
 		_sendQueue: [],
@@ -20,67 +16,49 @@ IS.reg('components.WebSocketClient', function () {
 		constructor: function (data) {
 			var me = $.extend(this, data);
 			// Веб-Сокет
-			me.connect = new WebSocketClient(
-				$.extend(
-					{
-						host: me.host,
-						port: me.port,
-						onOpen: function () {
-							me.msg(
-								{
-									register: {
-										id: me.registerId,
-										sessionId: me.sessionId
-									}
-								},
-								function () {
-									me.trigger('Connect.register');
-								}
-							);
+			me.connect = new this._client($.extend({
+				onMessage: function (data) {
 
-						},
-						onMessage: function (data) {
-							for (var category in data) {
-								if (category != 'callback' && category != 'Exception') {
-									for (var name in data[category]) {
-										if (category != 'Log') {
-											console.log('trigger', category + '.' + name, data[category][name]);
-										}
-										me.trigger(category + '.' + name, data[category][name]);
-									}
-								}
-							}
-							if ('callback' in data) {
-								me.runCallback(data.callback);
-							}
-							if ('Exception' in data) {
-								console.log(data.Exception);
+					for (var category in data) {
+						if (category != 'callback' && category != 'Exception') {
+							for (var name in data[category]) {
+								me.trigger(category + '.' + name, data[category][name]);
 							}
 						}
-					},
-					me.connect
-				)
-			);
+					}
+
+					if ('callback' in data) {
+						me._runCallback(data.callback);
+					}
+
+					if ('Exception' in data) {
+						throw new Error(data.Exception);
+					}
+
+				}
+			}, me.options));
 			return this;
 		},
+
 		msg: function (data, callback) {
 			this._sendQueue.push({
 				data: data,
 				callback: callback
 			});
-			this.run();
+			this._run();
 		},
-		run: function () {
+
+		_run: function () {
 			var me = this;
 			if (!me._sendProcessStarted) {
 				me._sendProcessStarted = true;
-				me.iterationCallback();
+				me._iterationCallback();
 			}
 		},
-		runCallback: function (index) {
+		_runCallback: function (index) {
 			this._sendCallbacks[index]();
 		},
-		iterationCallback: function () {
+		_iterationCallback: function () {
 			var me = this;
 			var task = me._sendQueue.shift();
 			if (task) {
@@ -89,7 +67,7 @@ IS.reg('components.WebSocketClient', function () {
 					if (task.callback) {
 						task.callback();
 					}
-					me.iterationCallback()
+					me._iterationCallback()
 				});
 				me.connect.send(JSON.stringify(task.data));
 			}
@@ -101,9 +79,9 @@ IS.reg('components.WebSocketClient', function () {
 		/**
 		 * Event model
 		 */
-		handlers: {},
+		_handlers: {},
 		trigger: function (name, args) {
-			var handlers = this.handlers;
+			var handlers = this._handlers;
 			if (name in handlers) {
 				for (var i = 0, ln = handlers[name].length; i < ln; i++) {
 					handlers[name][i](args);
@@ -144,14 +122,48 @@ IS.reg('components.WebSocketClient', function () {
 				}
 				else {
 					handler = arguments[1];
-					if (!(name in this.handlers)) {
-						me.handlers[name] = [];
+					if (!(name in me._handlers)) {
+						me._handlers[name] = [];
 					}
-					me.handlers[name].push(handler);
+					me._handlers[name].push(handler);
 				}
 
 			}
 			return this;
+		},
+		_client: function (opts) {
+			var o = $.extend(
+				{
+					protocol: 'ws',
+					host: 'localhost',
+					port: 80,
+					registerId: null,
+					sessionId: null,
+					onOpen: function () {
+						console.log('default handler for event @onOpen');
+					},
+					onClose: function (data) {
+						console.log('default handler for event @onClose', data);
+					},
+					onMessage: function (data) {
+						console.log('default handler for event @onMessage', data);
+					}
+				}, opts
+			);
+			var socket = new WebSocket(o.protocol + '://' + o.host + ':' + o.port + '/');
+			socket.onopen = function (msg) {
+				o.onOpen();
+			};
+			socket.onmessage = function (msg) {
+				if (msg.data) {
+					var data = JSON.parse(msg.data + "");
+					o.onMessage(data);
+				}
+			};
+			socket.onclose = function (msg) {
+				o.onClose(msg);
+			};
+			return socket;
 		}
 	});
 });

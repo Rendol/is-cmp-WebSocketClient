@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title>InfinitySystems component WebSocketClient</title>
+	<script type="application/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
+	<script type="application/javascript" src="../bower_components/matreshka/matreshka.js"></script>
+	<script type="application/javascript" src="../bower_components/InfinitySystems/src/InfinitySystems.js"></script>
+	<script type="application/javascript" src="../src/WebSocketClient.js"></script>
+</head>
+<body onload="run()">
+<script type="application/javascript">
+	function run() {
+		console.log('Start');
+
+		var ws = IS.crt('components.WebSocketClient', {
+			options: {
+				host: 'echo.websocket.org',
+				port: 80,
+				onOpen: function(){
+					console.log('onOpen', arguments);
+
+					ws.msg({
+						testCategory: {
+							testAction: {
+								testData: {
+									one: 1,
+									two: 2
+								}
+							}
+						}
+					}, function () {
+						console.log('ws.msg callback', arguments);
+					});
+
+				},
+				onClose: function (data) {
+					console.log('Close connection: ', data);
+					console.log('Reconnect: wait 10 second...');
+					// Reconnect
+					setTimeout(function () {
+						location.reload();
+					}, 10000);
+				}
+			}
+		});
+
+		ws.on('testCategory.testAction', function(testData) {
+			console.log('testCategory.testAction.testData', testData);
+		});
+
+		console.log('Finish');
+	}
+</script>
+</body>
+</html>
