@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Infinity Systems component WebSocketClient
  *
@@ -32,7 +33,8 @@ IS.reg('components.WebSocketClient', function () {
 					}
 
 					if ('Exception' in data) {
-						throw new Error(data.Exception);
+						console.log(data.Exception);
+						throw new Error(data.Exception.message);
 					}
 
 				}
