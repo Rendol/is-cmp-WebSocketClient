@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Infinity Systems component WebSocketClient
  *
@@ -93,45 +92,69 @@ IS.reg('components.WebSocketClient', function () {
 				console.log('Not found triggers for:', name);
 			}
 		},
-		on: function () {
+		on: function selfCalle() {
 			var me = this,
+				args = arguments,
 				i,
 				ln,
 				name,
-				handler,
 				handlers;
 
-			if (arguments[0] instanceof Array) {
-				handlers = arguments[0];
+			if (args[0] instanceof Array) {
+				handlers = args[0];
 				for (i = 0, ln = handlers.length; i < ln; i++) {
-					this.on(handlers[i]);
+					selfCalle.apply(me, [handlers[i]]);
 				}
 			}
-			else if (arguments[0] instanceof Object) {
-				handlers = arguments[0];
+			else if (args[0] instanceof Object) {
+				handlers = args[0];
 				for (name in handlers) {
-					this.on(name, handlers[name]);
+					selfCalle.apply(me, [name, handlers[name]]);
 				}
 			}
 			else {
-				name = arguments[0];
-
-				if (arguments[1] instanceof Array) {
-					handlers = arguments[1];
+				name = args[0];
+				handlers = args[1];
+				if (handlers instanceof Array) {
 					for (i = 0, ln = handlers.length; i < ln; i++) {
-						this.on(name, handlers[i]);
+						selfCalle.apply(me, [name, handlers[i]]);
 					}
 				}
 				else {
-					handler = arguments[1];
 					if (!(name in me._handlers)) {
 						me._handlers[name] = [];
 					}
-					me._handlers[name].push(handler);
+					me._handlers[name].push(handlers);
 				}
-
 			}
 			return this;
+		},
+		onDebounce: function (name, handler, wait, unique) {
+			var me = this;
+			if (!(name in me._handlers)) {
+				me._handlers[name] = [];
+			}
+			me._handlers[name].push(
+				me.debounce(
+					handler,
+					wait,
+					unique
+				)
+			);
+			return me;
+		},
+		debounce: function (func, wait, unique) {
+			var timeouts = {};
+			return function () {
+				var context = this, args = arguments;
+				var uniqueId = unique.apply(context, args);
+
+				clearTimeout(timeouts[uniqueId]);
+				timeouts[uniqueId] = setTimeout(function () {
+					timeouts[uniqueId] = null;
+					func.apply(context, args);
+				}, wait);
+			};
 		},
 		_client: function (opts) {
 			var o = $.extend(
@@ -168,4 +191,5 @@ IS.reg('components.WebSocketClient', function () {
 			return socket;
 		}
 	});
-});
+})
+;
