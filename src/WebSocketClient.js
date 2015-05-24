@@ -18,7 +18,6 @@ IS.reg('components.WebSocketClient', function () {
 			// Веб-Сокет
 			me.connect = new this._client($.extend({
 				onMessage: function (data) {
-
 					for (var category in data) {
 						if (category != 'callback' && category != 'Exception') {
 							for (var name in data[category]) {
@@ -63,7 +62,7 @@ IS.reg('components.WebSocketClient', function () {
 			var me = this;
 			var task = me._sendQueue.shift();
 			if (task) {
-				task.data['callback'] = me._sendCallbacks.length;
+				task.data[3] = me._sendCallbacks.length;
 				me._sendCallbacks.push(function () {
 					if (task.callback) {
 						task.callback();
@@ -182,7 +181,9 @@ IS.reg('components.WebSocketClient', function () {
 			socket.onmessage = function (msg) {
 				if (msg.data) {
 					var data = JSON.parse(msg.data + "");
-					o.onMessage(data);
+					if (data[1]) {
+						o.onMessage(data[1]);
+					}
 				}
 			};
 			socket.onclose = function (msg) {
