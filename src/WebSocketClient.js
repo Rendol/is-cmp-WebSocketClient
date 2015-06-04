@@ -64,9 +64,9 @@ IS.reg('components.WebSocketClient', function () {
             var task = me._sendQueue.shift();
             if (task) {
                 task.data['callback'] = me._sendCallbacks.length;
-                me._sendCallbacks.push(function () {
+                me._sendCallbacks.push(function (data) {
                     if (task.callback) {
-                        task.callback();
+                        task.callback(data);
                     }
                     me._iterationCallback()
                 });
